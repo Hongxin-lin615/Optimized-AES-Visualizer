@@ -15,41 +15,51 @@
           <h1>OPTIMIZED ADVANCED ENCRYPTION STANDARD <br/> VISUALIZER</h1>
           <div class="flex-container">
             <form class="grid" action="/encrypt" method="POST">
-                <label for="Plaintext" style="margin-left: 0vw;" >Enter the Plain Text: </label>
-                <input type="text" style="margin-left: 1.5vw;" name="plaintext" id="pt"> 
+                <label for="enc_plaintext" style="margin-left: 0vw;" >Enter the Plain Text: </label>
+                <input type="text" style="margin-left: 1.5vw;" name="plaintext" id="enc_plaintext">
                 <br/>
-        
-                <label for="Key" >Enter the 128-Bit Key: </label>
-                <input type="text" name="key" id="key">
+
+                <label for="enc_key_size">Select Key Size: </label>
+                <select name="key_size" id="enc_key_size" style="margin-left: 1.5vw; width: 10vw; height: 3vh;">
+                    <option value="128">128-Bit</option>
+                    <option value="192">192-Bit</option>
+                    <option value="256">256-Bit</option>
+                </select>
+                <br/>
+
+                <label for="enc_key" >Enter the Key: </label>
+                <input type="text" name="key" id="enc_key">
                 <br/>
                 <br/>
-        
+
                 <center>
                     <input type="Submit" class="submit_button" value="Encrypt">
                 </center>
-        
-              </form>
-    
-              <form class="grid" action="/decrypt" method="POST">
-                <label for="Plaintext" style="margin-left: 0vw;" >Enter the Cipher Text: </label>
-                <input type="text" style="margin-left: 0.4vw;" name="plaintext" id="pt"> 
+            </form>
+
+            <form class="grid" action="/decrypt" method="POST">
+                <label for="dec_ciphertext" style="margin-left: 0vw;" >Enter the Cipher Text: </label>
+                <input type="text" style="margin-left: 0.4vw;" name="ciphertext" id="dec_ciphertext">
                 <br/>
-        
-                <label for="Key" >Enter the 128-Bit Key: </label>
-                <input type="text" name="key" id="key">
+
+                <label for="dec_key_size">Select Key Size: </label>
+                <select name="key_size" id="dec_key_size" style="margin-left: 1.5vw; width: 10vw; height: 3vh;">
+                    <option value="128">128-Bit</option>
+                    <option value="192">192-Bit</option>
+                    <option value="256">256-Bit</option>
+                </select>
                 <br/>
+
+                <label for="dec_key" >Enter the 128-Bit Key: </label>
+                <input type="text" name="key" id="dec_key">
                 <br/>
-        
+
                 <center>
                     <input type="Submit" class="submit_button" value="Decrypt">
                 </center>
-        
-              </form>
+            </form>
           </div>
           <br/>
-          <footer style="margin-bottom: -3vw; font-size: medium;">
-            COPYRIGHT © 2022 SHUBHAM | ALL RIGHTS RESERVED.
-          </footer>
         </header>
         
       </div>

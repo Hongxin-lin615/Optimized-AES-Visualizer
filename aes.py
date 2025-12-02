@@ -1,7 +1,6 @@
 import copy
 import sys
 import numpy as np
-
 from constants import round_constants, s_box, inverted_s_box, const_matrix, const_matrix_inv
 
 no_of_rounds = 10
@@ -11,11 +10,17 @@ modulus = 0x11B
 answer = {}
 round_answers = {}
 
+AES_CONFIG = {
+    128: (4, 10),
+    192: (6, 12),
+    256: (8, 14)
+}
+
 
 def convert_to_matrix(ascii_array):
     ascii_matrix = np.zeros((4, 4))
-    for i in range(4*4):
-        ascii_matrix[i % 4][int(i/4)] = ascii_array[i]
+    for i in range(16):
+        ascii_matrix[i % 4][int(i / 4)] = ascii_array[i]
     return ascii_matrix
 
 
@@ -23,15 +28,16 @@ def unwrap_matrix(matrix):
     ascii_array = np.zeros(16)
     for i in range(4):
         for j in range(4):
-            ascii_array[4*i+j] = matrix[j][i]
+            ascii_array[4 * i + j] = matrix[j][i]
     return ascii_array
 
 
-def text_to_ascii(text):
+def text_to_ascii(text, expected_len=16):
     ascii_array = []
     for char in text:
         ascii_array.append(ord(char))
-    ascii_array = ascii_array + [0x00] * (16 - len(ascii_array))
+    if len(ascii_array) < expected_len:
+        ascii_array = ascii_array + [0x00] * (expected_len - len(ascii_array))
     return np.array(ascii_array)
 
 
@@ -42,24 +48,35 @@ def ascii_to_text(ascii_array):
     return text
 
 
-def key_expansion(key_matrix):
-    words = np.zeros((4*no_of_rounds+4, 4))
-    for i in range(4):
-        words[i] = key_matrix[:, i]
+def key_expansion(key_array, nk):
+    nr = AES_CONFIG[int(nk * 32)][1]
+    expanded_key_size = 4 * (nr + 1)
 
-    for i in range(4, 4*no_of_rounds+4):
-        if i % 4 == 0:
-            t = temporary_word(words, i)
-            words[i] = xor_matrix(t, words[i-4])
-        else:
-            words[i] = xor_matrix(words[i-1], words[i-4])
+    words = np.zeros((expanded_key_size, 4))
 
-    round_keys = np.zeros((no_of_rounds+1, 16))
-    for i in range(no_of_rounds+1):
-        round_keys[i, :4] = words[4*i]
-        round_keys[i, 4:8] = words[4*i+1]
-        round_keys[i, 8:12] = words[4*i+2]
-        round_keys[i, 12:] = words[4*i+3]
+    for i in range(nk):
+        words[i] = [key_array[4 * i], key_array[4 * i + 1], key_array[4 * i + 2], key_array[4 * i + 3]]
+
+    for i in range(nk, expanded_key_size):
+        temp = copy.deepcopy(words[i - 1])
+
+        if i % nk == 0:
+            temp = shift_rows(temp)
+            temp = sub_byte(temp)
+
+            r_con_val = round_constants[int(i / nk) - 1]
+            r_con_arr = np.array([r_con_val, 0, 0, 0])
+            temp = xor_matrix(temp, r_con_arr)
+
+        elif nk > 6 and (i % nk == 4):
+            temp = sub_byte(temp)
+
+        words[i] = xor_matrix(words[i - nk], temp)
+
+    round_keys = np.zeros((nr + 1, 16))
+    for i in range(nr + 1):
+        round_keys[i] = np.concatenate((words[4 * i], words[4 * i + 1], words[4 * i + 2], words[4 * i + 3]))
+
     return round_keys
 
 
@@ -68,16 +85,6 @@ def xor_matrix(first, second):
     for i in range(4):
         first[i] = int(first[i]) ^ int(second[i])
     return first
-
-
-def temporary_word(words, pos):
-    prev_word = words[pos-1]
-    rot_word = shift_rows(prev_word)
-    sub_word = sub_byte(rot_word)
-    Rcon = np.zeros(4)
-    Rcon[0] = round_constants[int(pos/4)-1]
-    new_word = xor_matrix(Rcon, sub_word)
-    return new_word
 
 
 def int_to_hex(number):
@@ -99,7 +106,6 @@ def int_to_hex(number):
     return [f, s]
 
 
-# Subbyte transform
 def sub_byte(row):
     new_row = copy.deepcopy(row)
     for i in range(4):
@@ -126,7 +132,6 @@ def inv_sub_byte_transformation(matrix):
         matrix[i] = inv_sub_byte(matrix[i])
 
 
-# Shift rows
 def shift_rows(row, shift=1):
     new_row = copy.deepcopy(row)
     for i in range(4):
@@ -142,38 +147,29 @@ def inv_shift_rows(row, shift=1):
 
 
 def shift_rows_transformation(matrix):
-    np.random.seed(int(answer["round_keys"][0][0]))
-    rot = np.random.randint(0, 4)
-    matrix[0] = shift_rows(matrix[0], 3)
     for i in range(4):
         matrix[i] = shift_rows(matrix[i], i)
 
 
 def inv_shift_rows_transformation(matrix):
-    np.random.seed(int(answer["round_keys"][0][0]))
-    rot = np.random.randint(0, 4)
-    matrix[0] = inv_shift_rows(matrix[0], rot)
     for i in range(4):
         matrix[i] = inv_shift_rows(matrix[i], i)
 
 
-# AES GF(2^8) representation
 def gf2n_multiply(a, b):
     sum = 0
     a = int(a)
     b = int(b)
     while (b > 0):
-        if (b & 1):  # if last bit of b is 1, add a to the sum
+        if (b & 1):
             sum = int(sum) ^ int(a)
-        b = int(b >> 1)  # divide b by 2, discarding the last bit
-        a = int(a << 1)  # multiply a by 2
+        b = int(b >> 1)
+        a = int(a << 1)
         if (a & overflow):
-            a = int(a) ^ int(modulus)  # reduce a modulo the AES polynomial
-
+            a = int(a) ^ int(modulus)
     return sum
 
 
-# Mix columns
 def mix_col(col):
     new_col = np.zeros(4)
     for i in range(4):
@@ -202,7 +198,6 @@ def inv_mix_column(matrix):
         matrix[:, i] = inv_mix_col(matrix[:, i])
 
 
-# Add round key
 def add_round_word(col, word):
     new_col = copy.deepcopy(col)
     for i in range(4):
@@ -211,9 +206,12 @@ def add_round_word(col, word):
 
 
 def add_round_key(matrix, keyword):
-    word = np.resize(keyword, (4, 4))
+    word_mat = np.zeros((4, 4))
+    for i in range(16):
+        word_mat[i % 4][int(i / 4)] = keyword[i]
+
     for i in range(4):
-        matrix[:, i] = add_round_word(matrix[:, i], word[i])
+        matrix[:, i] = add_round_word(matrix[:, i], word_mat[:, i])
 
 
 def encrypt(plain_text_orig, round_keys):
@@ -229,23 +227,19 @@ def encrypt(plain_text_orig, round_keys):
 
     round_matrices.append(copy.deepcopy(each_round))
 
-    for i in range(no_of_rounds-1):
+    for i in range(no_of_rounds - 1):
         each_round = {}
         sub_byte_transformation(plain_text_matrix)
-        each_round[0] = copy.deepcopy(
-            plain_text_matrix)
+        each_round[0] = copy.deepcopy(plain_text_matrix)
 
         shift_rows_transformation(plain_text_matrix)
-        each_round[1] = copy.deepcopy(
-            plain_text_matrix)
+        each_round[1] = copy.deepcopy(plain_text_matrix)
 
         mix_column(plain_text_matrix)
-        each_round[2] = copy.deepcopy(
-            plain_text_matrix)
+        each_round[2] = copy.deepcopy(plain_text_matrix)
 
-        add_round_key(plain_text_matrix, round_keys[i+1])
-        each_round[3] = copy.deepcopy(
-            plain_text_matrix)
+        add_round_key(plain_text_matrix, round_keys[i + 1])
+        each_round[3] = copy.deepcopy(plain_text_matrix)
 
         round_matrices.append(copy.deepcopy(each_round))
 
@@ -256,9 +250,8 @@ def encrypt(plain_text_orig, round_keys):
     shift_rows_transformation(plain_text_matrix)
     each_round[1] = copy.deepcopy(plain_text_matrix)
 
-    add_round_key(plain_text_matrix, round_keys[len(round_keys)-1])
-    each_round[2] = copy.deepcopy(
-        plain_text_matrix)
+    add_round_key(plain_text_matrix, round_keys[len(round_keys) - 1])
+    each_round[2] = copy.deepcopy(plain_text_matrix)
 
     round_matrices.append(copy.deepcopy(each_round))
 
@@ -276,44 +269,37 @@ def decrypt(cipher_text_orig, round_keys):
 
     round_matrices = []
 
-    add_round_key(cipher_text_matrix, round_keys[len(round_keys)-1])
+    add_round_key(cipher_text_matrix, round_keys[len(round_keys) - 1])
     each_round = {}
     each_round[3] = copy.deepcopy(cipher_text_matrix)
 
     round_matrices.append(copy.deepcopy(each_round))
 
-    for i in range(no_of_rounds-1, 0, -1):
+    for i in range(no_of_rounds - 1, 0, -1):
         each_round = {}
         inv_shift_rows_transformation(cipher_text_matrix)
-        each_round[0] = copy.deepcopy(
-            cipher_text_matrix)
+        each_round[0] = copy.deepcopy(cipher_text_matrix)
 
         inv_sub_byte_transformation(cipher_text_matrix)
-        each_round[1] = copy.deepcopy(
-            cipher_text_matrix)
+        each_round[1] = copy.deepcopy(cipher_text_matrix)
 
         add_round_key(cipher_text_matrix, round_keys[i])
-        each_round[2] = copy.deepcopy(
-            cipher_text_matrix)
+        each_round[2] = copy.deepcopy(cipher_text_matrix)
 
         inv_mix_column(cipher_text_matrix)
-        each_round[3] = copy.deepcopy(
-            cipher_text_matrix)
+        each_round[3] = copy.deepcopy(cipher_text_matrix)
 
         round_matrices.append(copy.deepcopy(each_round))
 
     each_round = {}
     inv_shift_rows_transformation(cipher_text_matrix)
-    each_round[0] = copy.deepcopy(
-        cipher_text_matrix)
+    each_round[0] = copy.deepcopy(cipher_text_matrix)
 
     inv_sub_byte_transformation(cipher_text_matrix)
-    each_round[1] = copy.deepcopy(
-        cipher_text_matrix)
+    each_round[1] = copy.deepcopy(cipher_text_matrix)
 
     add_round_key(cipher_text_matrix, round_keys[0])
-    each_round[2] = copy.deepcopy(
-        cipher_text_matrix)
+    each_round[2] = copy.deepcopy(cipher_text_matrix)
 
     round_matrices.append(copy.deepcopy(each_round))
     plaintext = ascii_to_text(unwrap_matrix(cipher_text_matrix))
@@ -324,19 +310,29 @@ def decrypt(cipher_text_orig, round_keys):
     return plaintext
 
 
-def input_to_encrypt(text, key):
+def input_to_encrypt(text, key, key_size=128):
+    global no_of_rounds
+
+    if key_size not in AES_CONFIG:
+        raise ValueError("Invalid key size")
+
+    nk, nr = AES_CONFIG[key_size]
+    no_of_rounds = nr
+
+    expected_key_bytes = key_size // 8
+    key_ascii = text_to_ascii(key, expected_key_bytes)
+
     blocks = []
     for i in range(0, len(text), 16):
-        last = i+16 if i+16 < len(text) else len(text)
+        last = i + 16 if i + 16 < len(text) else len(text)
         block_word = text[i:last]
         blocks.append(block_word)
 
-    key_matrix = convert_to_matrix(text_to_ascii(key))
-    round_keys = key_expansion(key_matrix)
+    round_keys = key_expansion(key_ascii, nk)
 
     answer["blocks"] = copy.deepcopy(blocks)
     answer["key"] = copy.deepcopy(key)
-    answer["key_matrix"] = copy.deepcopy(key_matrix)
+    answer["key_matrix"] = copy.deepcopy(convert_to_matrix(key_ascii[:16]))
     answer["round_keys"] = copy.deepcopy(round_keys)
 
     ciphertext = ""
@@ -348,19 +344,29 @@ def input_to_encrypt(text, key):
     return ciphertext
 
 
-def input_to_decrypt(text, key):
+def input_to_decrypt(text, key, key_size=128):
+    global no_of_rounds
+
+    if key_size not in AES_CONFIG:
+        raise ValueError("Invalid key size")
+
+    nk, nr = AES_CONFIG[key_size]
+    no_of_rounds = nr
+
+    expected_key_bytes = key_size // 8
+    key_ascii = text_to_ascii(key, expected_key_bytes)
+
     blocks = []
     for i in range(0, len(text), 16):
-        last = i+16 if i+16 < len(text) else len(text)
+        last = i + 16 if i + 16 < len(text) else len(text)
         block_word = text[i:last]
         blocks.append(block_word)
 
-    key_matrix = convert_to_matrix(text_to_ascii(key))
-    round_keys = key_expansion(key_matrix)
+    round_keys = key_expansion(key_ascii, nk)
 
     answer["blocks"] = copy.deepcopy(blocks)
     answer["key"] = copy.deepcopy(key)
-    answer["key_matrix"] = copy.deepcopy(key_matrix)
+    answer["key_matrix"] = copy.deepcopy(convert_to_matrix(key_ascii[:16]))
     answer["round_keys"] = copy.deepcopy(round_keys)
 
     plaintext = ""
@@ -372,70 +378,25 @@ def input_to_decrypt(text, key):
     return plaintext
 
 
-def encrypt_result(text, key):
+def encrypt_result(text, key, key_size=128):
     answer.clear()
+    k_size = int(key_size)
+
+    global no_of_rounds
+    no_of_rounds = AES_CONFIG[k_size][1]
+
     answer["no_of_rounds"] = no_of_rounds
-    cipher = input_to_encrypt(text, key)
+    input_to_encrypt(text, key, k_size)
     return answer
 
 
-def decrypt_result(text, key):
+def decrypt_result(text, key, key_size=128):
     answer.clear()
+    k_size = int(key_size)
+
+    global no_of_rounds
+    no_of_rounds = AES_CONFIG[k_size][1]
+
     answer["no_of_rounds"] = no_of_rounds
-    plain = input_to_decrypt(text, key)
+    input_to_decrypt(text, key, k_size)
     return answer
-
-
-#print(key_expansion(np.array(([[36, 52, 49, 19], [117, 117, 226, 170], [162, 86, 18, 84], [179, 136, 0, 135]]))))
-# cipher, ans = encrypt_result(sys.argv[1], sys.argv[2])
-# print(cipher)
-
-# plain, ans = decrypt_result(cipher, sys.argv[2])
-# print(plain)
-# ans = decrypt_result(ans["block0"]["cipher"], sys.argv[2])
-# print(ans["block0"]["plaintext"])
-# cipher = input_to_encrypt(sys.argv[1], sys.argv[2])
-# print("Cipher is: {}".format(cipher))
-# plaintext = input_to_decrypt(cipher, sys.argv[2])
-# print("Actual message is ", plaintext)
-# c = input_to_encrypt("SOME 128 BIT KEYSOME 128 BIT KEY", "SOME 128 BIT KEY")
-# print(c)
-# print(input_to_decrypt(c, "SOME 128 BIT KEY"))
-#file = open("sample.txt")
-# txt = "hello"
-# key = hash_it(txt)
-
-# pt = "Shubham"
-# c = input_to_encrypt(pt, key)
-# p = input_to_decrypt(c, key)
-# print(p)
-# aearr = 0
-# kt = 0
-
-# listi = []
-
-# for k in range(10):
-#     j = np.random.randint(0, len(pt))
-#     while j in listi:
-#         j = np.random.randint(0, len(pt))
-#     listi.append(j)
-#     pt1 = pt[:j] + chr((ord(pt[j])+1) % 256) + pt[j+1:]
-#     print(pt)
-#     print(pt1)
-#     c1 = input_to_encrypt(pt1, key)
-#     #p1 = input_to_decrypt(c1, key)
-
-#     ct = 0
-#     for i in range(len(c)):
-#         if c[i] != c1[i]:
-#             ct += 1
-#     ae = 100*(ct/len(c))
-#     print(ae)
-#     aearr += ae
-#     kt += 1
-
-# aerror = aearr/kt
-# print(aerror)
-
-# print("{}: {} {} ".format(pt, c, p))
-# print("{}: {} {} ".format(pt1, c1, p1))
