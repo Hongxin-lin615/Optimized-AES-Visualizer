@@ -1,294 +1,465 @@
 <!DOCTYPE html>
 <html lang="en">
-    <head>
-        <meta charset="UTF-8">
-        <meta http-equiv="X-UA-Compatible" content="IE=edge">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Optimized AES Visualizer</title>
-        <link rel="stylesheet" href="../static/index.css">
-        <link rel="icon" href="../static/AESLogo.png" />
-    </head>
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Optimized AES Visualizer – Result</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='index.css') }}">
+    <link rel="icon" href="{{ url_for('static', filename='AESLogo.png') }}">
+</head>
 <body>
-    <div class="App_result">
-        <header class="App-header_res">
-            {% if cipher %}
-            <p style="font-size: x-large;">The Encrypted Ciphertext is: <span>{{cipher}}</span></p>
-            {% else %}
-            <p style="font-size: x-large;">The Recovered Plaintext is: <span>{{plaintext}}</span></p>
-            {% endif %}
-            <p>The Text is divided into following blocks: <span >{{ans["blocks"]}}</span> </p>
-            <p>The Key is hashed using SHA-512 Algorithm: </p>
-            <div class="flex-container-sha">
-                KEY 
-                <div class="arrow-1"></div> 
-                <div class="box"> <div class="box-text">SHA 512 <img src="../static/SHA512.jpg"></div> </div>
-                <div class="arrow-1"></div> 
-                <span class="left-side">{{ans["key"]}}</span> 
-            </div>
-            <p>This Hashed Key is converted to ASCII values and stored in a matrix: </p>
-            <div class="flex-container-sha">
-                <span class="left-side">{{ans["key"]}}</span> 
-                <div class="arrow-1"></div> 
-                <div class="box"> <div class="box-text">ASCII <img src="../static/ASCII.JPG"></div> </div>
-                <div class="arrow-1"></div> 
-                <span class="left-side">{{ans["key_matrix"]}}</span> 
-            </div>
-
-            <p>This ASCII Key Matrix is used for Key Expansion: </p>
-            <div class="flex-container-sha">
-                <span class="left-side">{{ans["key_matrix"]}}</span> 
-                <div class="arrow-1"></div> 
-                <div class="box"> <div class="box-text">Key Expansion <img src="../static/keyexpand.png"> </div> </div>
-                <div class="arrow-1"></div> 
-                <div>
-                    {% for i in range(no_of_rounds+1) %}
-                    <p>KEY {{i}} = <span class="left-side">{{ans["round_keys"][i]}}</span> </p>
-                    {% endfor %}
+    <div class="aes-page">
+        
+        <aside class="aes-sidebar">
+            <div class="aes-logo">
+                <div class="aes-logo-icon">
+                    <img src="{{ url_for('static', filename='logo512.png') }}" alt="AES Logo">
+                </div>
+                <div class="aes-logo-text">
+                    <div class="aes-logo-title">Optimized AES Visualizer</div>
+                    <div class="aes-logo-subtitle">Result & Round Visualization</div>
                 </div>
             </div>
 
-            {% for i in range(blocks) %}
-                <p>For Block {{i}}: </p>
-                <p>This Block is converted to ASCII values and stored in a matrix: </p>
-                <div class="flex-container-sha">
-                    <span class="left-side">{{ans["blocks"][i]}}</span> 
-                    <div class="arrow-1"></div> 
-                    <div class="box"> <div class="box-text">ASCII <img src="../static/ASCII.JPG"></div> </div>
-                    <div class="arrow-1"></div> 
-                    <span class="left-side">{{ans[i]["ascii_matrix"]}}</span>
-                </div>
-
+            <div class="aes-sidebar-section">
+                <h3>Final output</h3>
                 {% if cipher %}
-                    <p>This ASCII matrix is Passed on to Pre-Round Transformation: </p>
-                    <div class="flex-container-sha">
-                        <span class="left-side">{{ans[i]["ascii_matrix"]}}</span> 
-                        <div class="arrow-1"></div> 
-                        <div class="box"> <div class="box-text">Pre-Round Transformation (Adding KEY0) <img src="../static/addround.png"></div> </div>
-                        <div class="arrow-1"></div> 
-                        <span class="left-side">{{ans[i]["rounds"][0][3]}}</span>
-                    </div>
-
-                    <p>Now this matrix will undergo {{no_of_rounds}} rounds of AES: </p>
-                    {% for j in range(1, no_of_rounds) %}
-                    <p>Round {{j}}:  </p>
-                    <ol>
-                        <li>
-                            <div class="flex-container-sha">
-                                <span class="left-side">{{ans[i]["rounds"][j-1][3]}}</span> 
-                                <div class="arrow-1"></div> 
-                                <div class="box"> <div class="box-text">SubBytes Transformation <br/> (Using S-Box) <img src="../static/subbyte.png"></div> </div>
-                                <div class="arrow-1"></div> 
-                                <span class="left-side">{{ans[i]["rounds"][j][0]}}</span>
-                            </div>
-                        </li>
-
-                        <br/>
-
-                        <li>
-                            <div class="flex-container-sha">
-                                <span class="left-side">{{ans[i]["rounds"][j][0]}}</span> 
-                                <div class="arrow-1"></div> 
-                                <div class="box"> <div class="box-text">Improvised ShiftRows Transformation <br/> (Left Shifts) <img src="../static/shiftrows.png"></div> </div>
-                                <div class="arrow-1"></div> 
-                                <span class="left-side">{{ans[i]["rounds"][j][1]}}</span>
-                            </div>
-                        </li>
-
-                        <br/>
-
-                        <li>
-                            <div class="flex-container-sha">
-                                <span class="left-side">{{ans[i]["rounds"][j][1]}}</span> 
-                                <div class="arrow-1"></div> 
-                                <div class="box"> <div class="box-text">MixColumns Transformation <br/> (Using GF(2^8) multiplication) <img src="../static/mixcolumn.png"></div> </div>
-                                <div class="arrow-1"></div> 
-                                <span class="left-side">{{ans[i]["rounds"][j][2]}}</span>
-                            </div>
-                        </li>
-
-                        <br/>
-
-
-                        <li>
-                            <div class="flex-container-sha">
-                                <span class="left-side">{{ans[i]["rounds"][j][2]}}</span> 
-                                <div class="arrow-1"></div> 
-                                <div class="box"> <div class="box-text">AddRoundKey Transformation <br/> (Adding KEY{{j}}) <img src="../static/addround.png"></div> </div>
-                                <div class="arrow-1"></div> 
-                                <span class="left-side">{{ans[i]["rounds"][j][3]}}</span>
-                            </div>
-                        </li>
-                    </ol>
-                            
-                    {% endfor %}
-                    <p>Round {{no_of_rounds}}: </span></p>
-                    <ol>
-                        <li>
-                            <div class="flex-container-sha">
-                                <span class="left-side">{{ans[i]["rounds"][no_of_rounds-1][3]}}</span> 
-                                <div class="arrow-1"></div> 
-                                <div class="box"> <div class="box-text">SubBytes Transformation <br/> (Using S-Box) <img src="../static/subbyte.png"></div> </div>
-                                <div class="arrow-1"></div> 
-                                <span class="left-side">{{ans[i]["rounds"][no_of_rounds][0]}}</span>
-                            </div>
-                        </li>
-
-                        <br/>
-
-                        <li>
-                            <div class="flex-container-sha">
-                                <span class="left-side">{{ans[i]["rounds"][no_of_rounds][0]}}</span> 
-                                <div class="arrow-1"></div> 
-                                <div class="box"> <div class="box-text"> Improvised ShiftRows Transformation <br/> (Left Shifts) <img src="../static/shiftrows.png"></div> </div>
-                                <div class="arrow-1"></div> 
-                                <span class="left-side">{{ans[i]["rounds"][no_of_rounds][1]}}</span>
-                            </div>
-                        </li>
-
-                        <br/>
-
-                        <li>
-                            <div class="flex-container-sha">
-                                <span class="left-side">{{ans[i]["rounds"][no_of_rounds][1]}}</span> 
-                                <div class="arrow-1"></div> 
-                                <div class="box"> <div class="box-text">AddRoundKey Transformation <br/> (Adding KEY{{no_of_rounds}}) <img src="../static/addround.png"></div> </div>
-                                <div class="arrow-1"></div> 
-                                <span class="left-side">{{ans[i]["rounds"][no_of_rounds][2]}}</span>
-                            </div>
-                        </li>
-                    </ol>
-                    
-                    <p>The Cipher Text of this Block is obtained by converting this matrix into ASCII characters:</p>
-                    <div class="flex-container-sha">
-                        <span class="left-side">{{ans[i]["rounds"][no_of_rounds][2]}}</span> 
-                        <div class="arrow-1"></div> 
-                        <div class="box"> <div class="box-text">ASCII Characters <img src="../static/ASCII.JPG"></div> </div>
-                        <div class="arrow-1"></div> 
-                        <span class="left-side">{{ans[i]["cipher"]}}</span>
-                    </div>
-
+                    <p class="sidebar-highlight-label">Encrypted Ciphertext</p>
+                    <p class="sidebar-highlight-value">{{ cipher }}</p>
                 {% else %}
-                    <p>This ASCII matrix is Passed on to Pre-Round Transformation: </p>
-                    <div class="flex-container-sha">
-                        <span class="left-side">{{ans[i]["ascii_matrix"]}}</span> 
-                        <div class="arrow-1"></div> 
-                        <div class="box"> <div class="box-text">Pre-Round Transformation  (Adding KEY{{no_of_rounds}}) <img src="../static/addround.png"></div> </div>
-                        <div class="arrow-1"></div> 
-                        <span class="left-side">{{ans[i]["rounds"][0][3]}}</span>
-                    </div>
-
-                    <p>Now this matrix will undergo {{no_of_rounds}} rounds of AES: </p>
-                    {% for j in range(1, no_of_rounds) %}
-                    <p>Round {{j}}:  </p>
-                    <ol>
-                        <li>
-                            <div class="flex-container-sha">
-                                <span class="left-side">{{ans[i]["rounds"][j-1][3]}}</span> 
-                                <div class="arrow-1"></div> 
-                                <div class="box"> <div class="box-text">Improvised InvShiftRows Transformation <br/> (Right Shifts) <img src="../static/shiftrows.png"></div> </div>
-                                <div class="arrow-1"></div> 
-                                <span class="left-side">{{ans[i]["rounds"][j][0]}}</span>
-                            </div>
-                        </li>
-
-                        <br/>
-
-                        <li>
-                            <div class="flex-container-sha">
-                                <span class="left-side">{{ans[i]["rounds"][j][0]}}</span> 
-                                <div class="arrow-1"></div> 
-                                <div class="box"> <div class="box-text">InvSubBytes Transformation <br/> (Using Inv S-Box) <img src="../static/subbyte.png"></div> </div>
-                                <div class="arrow-1"></div> 
-                                <span class="left-side">{{ans[i]["rounds"][j][1]}}</span>
-                            </div>
-                        </li>
-
-                        <br/>
-
-
-                        <li>
-                            <div class="flex-container-sha">
-                                <span class="left-side">{{ans[i]["rounds"][j][1]}}</span> 
-                                <div class="arrow-1"></div> 
-                                <div class="box"> <div class="box-text">AddRoundKey Transformation (Adding KEY {{no_of_rounds - j}}) <img src="../static/addround.png"></div> </div>
-                                <div class="arrow-1"></div> 
-                                <span class="left-side">{{ans[i]["rounds"][j][2]}}</span>
-                            </div>
-                        </li>
-
-                        <br/>
-
-
-                        <li>
-                            <div class="flex-container-sha">
-                                <span class="left-side">{{ans[i]["rounds"][j][2]}}</span> 
-                                <div class="arrow-1"></div> 
-                                <div class="box"> <div class="box-text">InvMixColumns Transformation <br/> (Using GF(2^8) multiplication) <img src="../static/mixcolumn.png"></div> </div>
-                                <div class="arrow-1"></div> 
-                                <span class="left-side">{{ans[i]["rounds"][j][3]}}</span>
-                            </div>
-                        </li>
-                    </ol>
-                            
-                    {% endfor %}
-                    <p>Round {{no_of_rounds}}: </span></p>
-                    <ol>
-                        <li>
-                            <div class="flex-container-sha">
-                                <span class="left-side">{{ans[i]["rounds"][no_of_rounds-1][3]}}</span> 
-                                <div class="arrow-1"></div> 
-                                <div class="box"> <div class="box-text">Improvised InvShiftRows Transformation <br/> (Right Shifts) <img src="../static/shiftrows.png"></div> </div>
-                                <div class="arrow-1"></div> 
-                                <span class="left-side">{{ans[i]["rounds"][no_of_rounds][0]}}</span>
-                            </div>
-                        </li>
-
-                        <br/>
-
-                        <li>
-                            <div class="flex-container-sha">
-                                <span class="left-side">{{ans[i]["rounds"][no_of_rounds][0]}}</span> 
-                                <div class="arrow-1"></div> 
-                                <div class="box"> <div class="box-text">InvSubBytes Transformation <br/> (Using Inv S-Box) <img src="../static/subbyte.png"></div> </div>
-                                <div class="arrow-1"></div> 
-                                <span class="left-side">{{ans[i]["rounds"][no_of_rounds][1]}}</span>
-                            </div>
-                        </li>
-
-                        <br/>
-
-
-                        <li>
-                            <div class="flex-container-sha">
-                                <span class="left-side">{{ans[i]["rounds"][no_of_rounds][1]}}</span> 
-                                <div class="arrow-1"></div> 
-                                <div class="box"> <div class="box-text">AddRoundKey Transformation (Adding KEY0) <img src="../static/addround.png"></div> </div>
-                                <div class="arrow-1"></div> 
-                                <span class="left-side">{{ans[i]["rounds"][no_of_rounds][2]}}</span>
-                            </div>
-                        </li>
-
-                    </ol>
-                    
-                    <p>The Plaintext of this Block is obtained by converting this matrix into ASCII characters:</p>
-                    <div class="flex-container-sha">
-                        <span class="left-side">{{ans[i]["rounds"][no_of_rounds][2]}}</span> 
-                        <div class="arrow-1"></div> 
-                        <div class="box"> <div class="box-text">ASCII Characters <img src="../static/ASCII.JPG"></div> </div>
-                        <div class="arrow-1"></div> 
-                        <span class="left-side">{{ans[i]["plaintext"]}}</span>
-                    </div>
+                    <p class="sidebar-highlight-label">Recovered Plaintext</p>
+                    <p class="sidebar-highlight-value">{{ plaintext }}</p>
                 {% endif %}
+            </div>
 
-            {% endfor %}
+            <div class="aes-sidebar-section">
+                <h3>Navigation</h3>
+                <ul class="aes-meta-list">
+                    <li>
+                        <span>New run</span>
+                        <strong><a href="/" class="sidebar-link">← Back to input</a></strong>
+                    </li>
+                </ul>
+            </div>
+        </aside>
+
+        
+        <main class="aes-main">
+            <header class="aes-header">
+                <div>
+                    {% if cipher %}
+                        <h1>Encryption process visualization</h1>
+                        <p>Below is a full breakdown of how your plaintext was transformed into ciphertext.</p>
+                    {% else %}
+                        <h1>Decryption process visualization</h1>
+                        <p>Below is a full breakdown of how your ciphertext was transformed back into plaintext.</p>
+                    {% endif %}
+                </div>
+            </header>
+
             
-            {% if cipher %}
-            <p style="font-size: x-large;">The Complete Ciphertext is: <span>{{cipher}}</span></p>
-            {% else %}
-            <p style="font-size: x-large;">The Complete Plaintext is: <span>{{plaintext}}</span></p>
-            {% endif %}
+            <section class="aes-card aes-card-result">
+                <h2 class="aes-card-title">High-level summary</h2>
+                <p class="aes-card-desc">Blocks, key hashing, and expanded round keys used in this run.</p>
 
-        </header>
-      </div>
+                <div class="result-summary">
+                    <p>The text is divided into the following blocks:</p>
+                    <pre class="aes-result-text">{{ ans["blocks"] }}</pre>
+
+                    <p>The key is hashed using <strong>SHA-512</strong>:</p>
+                    <div class="flex-container-sha">
+                        <span class="left-label">KEY</span> 
+                        <div class="arrow-1"></div> 
+                        <div class="box">
+                            <div class="box-text">
+                                SHA-512
+                                <img src="{{ url_for('static', filename='SHA512.jpg') }}" alt="SHA512">
+                            </div>
+                        </div>
+                        <div class="arrow-1"></div> 
+                        <span class="left-side">{{ ans["key"] }}</span> 
+                    </div>
+
+                    <p>This hashed key is converted to ASCII values and stored in a matrix:</p>
+                    <div class="flex-container-sha">
+                        <span class="left-side">{{ ans["key"] }}</span> 
+                        <div class="arrow-1"></div> 
+                        <div class="box">
+                            <div class="box-text">
+                                ASCII
+                                <img src="{{ url_for('static', filename='ASCII.JPG') }}" alt="ASCII">
+                            </div>
+                        </div>
+                        <div class="arrow-1"></div> 
+                        <span class="left-side">{{ ans["key_matrix"] }}</span> 
+                    </div>
+
+                    <p>This ASCII key matrix is used for key expansion:</p>
+                    <div class="flex-container-sha">
+                        <span class="left-side">{{ ans["key_matrix"] }}</span> 
+                        <div class="arrow-1"></div> 
+                        <div class="box">
+                            <div class="box-text">
+                                Key Expansion
+                                <img src="{{ url_for('static', filename='keyexpand.png') }}" alt="Key Expansion">
+                            </div>
+                        </div>
+                        <div class="arrow-1"></div> 
+                        <div class="round-keys">
+                            {% for i in range(no_of_rounds+1) %}
+                                <p>KEY {{ i }} = <span class="left-side">{{ ans["round_keys"][i] }}</span></p>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            
+            <section class="aes-card aes-steps-card">
+                <div class="aes-steps-header">
+                    <h2 class="aes-card-title">Round-by-round visualization</h2>
+                    <p class="aes-card-desc">
+                        For each block, follow how the state changes across all {{ no_of_rounds }} rounds.
+                    </p>
+                </div>
+
+                <div class="aes-steps-timeline">
+                    {% for i in range(blocks) %}
+                        <article class="aes-step">
+                            <header class="aes-step-header">
+                                <div class="aes-step-index">Block {{ i }}</div>
+                                <div class="aes-step-title">
+                                    {% if cipher %}Encryption{% else %}Decryption{% endif %} flow
+                                </div>
+                            </header>
+                            <div class="aes-step-body">
+                                <p class="aes-step-text">This block is converted to ASCII values and stored in a matrix:</p>
+                                <div class="flex-container-sha">
+                                    <span class="left-side">{{ ans["blocks"][i] }}</span> 
+                                    <div class="arrow-1"></div> 
+                                    <div class="box">
+                                        <div class="box-text">
+                                            ASCII
+                                            <img src="{{ url_for('static', filename='ASCII.JPG') }}" alt="ASCII">
+                                        </div>
+                                    </div>
+                                    <div class="arrow-1"></div> 
+                                    <span class="left-side">{{ ans[i]["ascii_matrix"] }}</span>
+                                </div>
+
+                                {% if cipher %}
+                                    
+                                    <p class="aes-step-text">This ASCII matrix is passed on to the pre-round transformation:</p>
+                                    <div class="flex-container-sha">
+                                        <span class="left-side">{{ ans[i]["ascii_matrix"] }}</span> 
+                                        <div class="arrow-1"></div> 
+                                        <div class="box">
+                                            <div class="box-text">
+                                                Pre-Round (Add KEY0)
+                                                <img src="{{ url_for('static', filename='addround.png') }}" alt="AddRoundKey">
+                                            </div>
+                                        </div>
+                                        <div class="arrow-1"></div> 
+                                        <span class="left-side">{{ ans[i]["rounds"][0][3] }}</span>
+                                    </div>
+
+                                    <p class="aes-step-text">Now this matrix will undergo {{ no_of_rounds }} rounds of AES:</p>
+                                    {% for j in range(1, no_of_rounds) %}
+                                        <div class="round-section">
+                                            <p class="round-title">Round {{ j }}</p>
+                                            <ol>
+                                                <li>
+                                                    <div class="flex-container-sha">
+                                                        <span class="left-side">{{ ans[i]["rounds"][j-1][3] }}</span> 
+                                                        <div class="arrow-1"></div> 
+                                                        <div class="box">
+                                                            <div class="box-text">
+                                                                SubBytes<br>(S-Box)
+                                                                <img src="{{ url_for('static', filename='subbyte.png') }}" alt="SubBytes">
+                                                            </div>
+                                                        </div>
+                                                        <div class="arrow-1"></div> 
+                                                        <span class="left-side">{{ ans[i]["rounds"][j][0] }}</span>
+                                                    </div>
+                                                </li>
+
+                                                <li>
+                                                    <div class="flex-container-sha">
+                                                        <span class="left-side">{{ ans[i]["rounds"][j][0] }}</span> 
+                                                        <div class="arrow-1"></div> 
+                                                        <div class="box">
+                                                            <div class="box-text">
+                                                                ShiftRows<br>(Left shifts)
+                                                                <img src="{{ url_for('static', filename='shiftrows.png') }}" alt="ShiftRows">
+                                                            </div>
+                                                        </div>
+                                                        <div class="arrow-1"></div> 
+                                                        <span class="left-side">{{ ans[i]["rounds"][j][1] }}</span>
+                                                    </div>
+                                                </li>
+
+                                                <li>
+                                                    <div class="flex-container-sha">
+                                                        <span class="left-side">{{ ans[i]["rounds"][j][1] }}</span> 
+                                                        <div class="arrow-1"></div> 
+                                                        <div class="box">
+                                                            <div class="box-text">
+                                                                MixColumns<br>(GF(2^8))
+                                                                <img src="{{ url_for('static', filename='mixcolumn.png') }}" alt="MixColumns">
+                                                            </div>
+                                                        </div>
+                                                        <div class="arrow-1"></div> 
+                                                        <span class="left-side">{{ ans[i]["rounds"][j][2] }}</span>
+                                                    </div>
+                                                </li>
+
+                                                <li>
+                                                    <div class="flex-container-sha">
+                                                        <span class="left-side">{{ ans[i]["rounds"][j][2] }}</span> 
+                                                        <div class="arrow-1"></div> 
+                                                        <div class="box">
+                                                            <div class="box-text">
+                                                                AddRoundKey<br>(KEY{{ j }})
+                                                                <img src="{{ url_for('static', filename='addround.png') }}" alt="AddRoundKey">
+                                                            </div>
+                                                        </div>
+                                                        <div class="arrow-1"></div> 
+                                                        <span class="left-side">{{ ans[i]["rounds"][j][3] }}</span>
+                                                    </div>
+                                                </li>
+                                            </ol>
+                                        </div>
+                                    {% endfor %}
+
+                                    <div class="round-section">
+                                        <p class="round-title">Round {{ no_of_rounds }}</p>
+                                        <ol>
+                                            <li>
+                                                <div class="flex-container-sha">
+                                                    <span class="left-side">{{ ans[i]["rounds"][no_of_rounds-1][3] }}</span> 
+                                                    <div class="arrow-1"></div> 
+                                                    <div class="box">
+                                                        <div class="box-text">
+                                                            SubBytes<br>(S-Box)
+                                                            <img src="{{ url_for('static', filename='subbyte.png') }}" alt="SubBytes">
+                                                        </div>
+                                                    </div>
+                                                    <div class="arrow-1"></div> 
+                                                    <span class="left-side">{{ ans[i]["rounds"][no_of_rounds][0] }}</span>
+                                                </div>
+                                            </li>
+
+                                            <li>
+                                                <div class="flex-container-sha">
+                                                    <span class="left-side">{{ ans[i]["rounds"][no_of_rounds][0] }}</span> 
+                                                    <div class="arrow-1"></div> 
+                                                    <div class="box">
+                                                        <div class="box-text">
+                                                            ShiftRows<br>(Left shifts)
+                                                            <img src="{{ url_for('static', filename='shiftrows.png') }}" alt="ShiftRows">
+                                                        </div>
+                                                    </div>
+                                                    <div class="arrow-1"></div> 
+                                                    <span class="left-side">{{ ans[i]["rounds"][no_of_rounds][1] }}</span>
+                                                </div>
+                                            </li>
+
+                                            <li>
+                                                <div class="flex-container-sha">
+                                                    <span class="left-side">{{ ans[i]["rounds"][no_of_rounds][1] }}</span> 
+                                                    <div class="arrow-1"></div> 
+                                                    <div class="box">
+                                                        <div class="box-text">
+                                                            AddRoundKey<br>(KEY{{ no_of_rounds }})
+                                                            <img src="{{ url_for('static', filename='addround.png') }}" alt="AddRoundKey">
+                                                        </div>
+                                                    </div>
+                                                    <div class="arrow-1"></div> 
+                                                    <span class="left-side">{{ ans[i]["rounds"][no_of_rounds][2] }}</span>
+                                                </div>
+                                            </li>
+                                        </ol>
+                                    </div>
+
+                                    <p class="aes-step-text">The ciphertext of this block is obtained by converting this matrix into ASCII characters:</p>
+                                    <div class="flex-container-sha">
+                                        <span class="left-side">{{ ans[i]["rounds"][no_of_rounds][2] }}</span> 
+                                        <div class="arrow-1"></div> 
+                                        <div class="box">
+                                            <div class="box-text">
+                                                ASCII
+                                                <img src="{{ url_for('static', filename='ASCII.JPG') }}" alt="ASCII">
+                                            </div>
+                                        </div>
+                                        <div class="arrow-1"></div> 
+                                        <span class="left-side">{{ ans[i]["cipher"] }}</span>
+                                    </div>
+                                {% else %}
+                                    
+                                    <p class="aes-step-text">This ASCII matrix is passed on to the pre-round transformation:</p>
+                                    <div class="flex-container-sha">
+                                        <span class="left-side">{{ ans[i]["ascii_matrix"] }}</span> 
+                                        <div class="arrow-1"></div> 
+                                        <div class="box">
+                                            <div class="box-text">
+                                                Pre-Round (Add KEY{{ no_of_rounds }})
+                                                <img src="{{ url_for('static', filename='addround.png') }}" alt="AddRoundKey">
+                                            </div>
+                                        </div>
+                                        <div class="arrow-1"></div> 
+                                        <span class="left-side">{{ ans[i]["rounds"][0][3] }}</span>
+                                    </div>
+
+                                    <p class="aes-step-text">Now this matrix will undergo {{ no_of_rounds }} rounds of AES:</p>
+                                    {% for j in range(1, no_of_rounds) %}
+                                        <div class="round-section">
+                                            <p class="round-title">Round {{ j }}</p>
+                                            <ol>
+                                                <li>
+                                                    <div class="flex-container-sha">
+                                                        <span class="left-side">{{ ans[i]["rounds"][j-1][3] }}</span> 
+                                                        <div class="arrow-1"></div> 
+                                                        <div class="box">
+                                                            <div class="box-text">
+                                                                InvShiftRows<br>(Right shifts)
+                                                                <img src="{{ url_for('static', filename='shiftrows.png') }}" alt="InvShiftRows">
+                                                            </div>
+                                                        </div>
+                                                        <div class="arrow-1"></div> 
+                                                        <span class="left-side">{{ ans[i]["rounds"][j][0] }}</span>
+                                                    </div>
+                                                </li>
+
+                                                <li>
+                                                    <div class="flex-container-sha">
+                                                        <span class="left-side">{{ ans[i]["rounds"][j][0] }}</span> 
+                                                        <div class="arrow-1"></div> 
+                                                        <div class="box">
+                                                            <div class="box-text">
+                                                                InvSubBytes<br>(Inv S-Box)
+                                                                <img src="{{ url_for('static', filename='subbyte.png') }}" alt="InvSubBytes">
+                                                            </div>
+                                                        </div>
+                                                        <div class="arrow-1"></div> 
+                                                        <span class="left-side">{{ ans[i]["rounds"][j][1] }}</span>
+                                                    </div>
+                                                </li>
+
+                                                <li>
+                                                    <div class="flex-container-sha">
+                                                        <span class="left-side">{{ ans[i]["rounds"][j][1] }}</span> 
+                                                        <div class="arrow-1"></div> 
+                                                        <div class="box">
+                                                            <div class="box-text">
+                                                                AddRoundKey<br>(KEY{{ no_of_rounds - j }})
+                                                                <img src="{{ url_for('static', filename='addround.png') }}" alt="AddRoundKey">
+                                                            </div>
+                                                        </div>
+                                                        <div class="arrow-1"></div> 
+                                                        <span class="left-side">{{ ans[i]["rounds"][j][2] }}</span>
+                                                    </div>
+                                                </li>
+
+                                                <li>
+                                                    <div class="flex-container-sha">
+                                                        <span class="left-side">{{ ans[i]["rounds"][j][2] }}</span> 
+                                                        <div class="arrow-1"></div> 
+                                                        <div class="box">
+                                                            <div class="box-text">
+                                                                InvMixColumns<br>(GF(2^8))
+                                                                <img src="{{ url_for('static', filename='mixcolumn.png') }}" alt="InvMixColumns">
+                                                            </div>
+                                                        </div>
+                                                        <div class="arrow-1"></div> 
+                                                        <span class="left-side">{{ ans[i]["rounds"][j][3] }}</span>
+                                                    </div>
+                                                </li>
+                                            </ol>
+                                        </div>
+                                    {% endfor %}
+
+                                    <div class="round-section">
+                                        <p class="round-title">Round {{ no_of_rounds }}</p>
+                                        <ol>
+                                            <li>
+                                                <div class="flex-container-sha">
+                                                    <span class="left-side">{{ ans[i]["rounds"][no_of_rounds-1][3] }}</span> 
+                                                    <div class="arrow-1"></div> 
+                                                    <div class="box">
+                                                        <div class="box-text">
+                                                            InvShiftRows<br>(Right shifts)
+                                                            <img src="{{ url_for('static', filename='shiftrows.png') }}" alt="InvShiftRows">
+                                                        </div>
+                                                    </div>
+                                                    <div class="arrow-1"></div> 
+                                                    <span class="left-side">{{ ans[i]["rounds"][no_of_rounds][0] }}</span>
+                                                </div>
+                                            </li>
+
+                                            <li>
+                                                <div class="flex-container-sha">
+                                                    <span class="left-side">{{ ans[i]["rounds"][no_of_rounds][0] }}</span> 
+                                                    <div class="arrow-1"></div> 
+                                                    <div class="box">
+                                                        <div class="box-text">
+                                                            InvSubBytes<br>(Inv S-Box)
+                                                            <img src="{{ url_for('static', filename='subbyte.png') }}" alt="InvSubBytes">
+                                                        </div>
+                                                    </div>
+                                                    <div class="arrow-1"></div> 
+                                                    <span class="left-side">{{ ans[i]["rounds"][no_of_rounds][1] }}</span>
+                                                </div>
+                                            </li>
+
+                                            <li>
+                                                <div class="flex-container-sha">
+                                                    <span class="left-side">{{ ans[i]["rounds"][no_of_rounds][1] }}</span> 
+                                                    <div class="arrow-1"></div> 
+                                                    <div class="box">
+                                                        <div class="box-text">
+                                                            AddRoundKey<br>(KEY0)
+                                                            <img src="{{ url_for('static', filename='addround.png') }}" alt="AddRoundKey">
+                                                        </div>
+                                                    </div>
+                                                    <div class="arrow-1"></div> 
+                                                    <span class="left-side">{{ ans[i]["rounds"][no_of_rounds][2] }}</span>
+                                                </div>
+                                            </li>
+                                        </ol>
+                                    </div>
+
+                                    <p class="aes-step-text">The plaintext of this block is obtained by converting this matrix into ASCII characters:</p>
+                                    <div class="flex-container-sha">
+                                        <span class="left-side">{{ ans[i]["rounds"][no_of_rounds][2] }}</span> 
+                                        <div class="arrow-1"></div> 
+                                        <div class="box">
+                                            <div class="box-text">
+                                                ASCII
+                                                <img src="{{ url_for('static', filename='ASCII.JPG') }}" alt="ASCII">
+                                            </div>
+                                        </div>
+                                        <div class="arrow-1"></div> 
+                                        <span class="left-side">{{ ans[i]["plaintext"] }}</span>
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </article>
+                    {% endfor %}
+                </div>
+            </section>
+
+            
+            <section class="aes-card aes-card-result final-summary-card">
+                {% if cipher %}
+                    <p class="final-summary-title">Complete Ciphertext</p>
+                    <p class="final-summary-value">{{ cipher }}</p>
+                {% else %}
+                    <p class="final-summary-title">Complete Plaintext</p>
+                    <p class="final-summary-value">{{ plaintext }}</p>
+                {% endif %}
+            </section>
+        </main>
+    </div>
 </body>
 </html>

@@ -5,136 +5,157 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Optimized AES Visualizer</title>
-    <link rel="stylesheet" href="../static/index.css">
-    <link rel="icon" href="../static/AESLogo.png" />
 
-    <style>
-        .flex-container {
-            display: flex;
-            justify-content: center;
-            gap: 80px;
-            align-items: stretch;
-            padding-top: 20px;
-        }
 
-        .form-column {
-            display: flex;
-            flex-direction: column;
-            width: 400px;
-        }
-
-        .form-row {
-            display: flex;
-            justify-content: flex-end;
-            align-items: center;
-            height: 40px;
-            margin-bottom: 20px;
-        }
-
-        .form-row label {
-            color: #3399ff;
-            font-weight: bold;
-            font-size: 1.1rem;
-            margin-right: 15px;
-            white-space: nowrap;
-        }
-
-        .form-row input[type="text"],
-        .form-row select {
-            width: 180px;
-            height: 30px;
-            box-sizing: border-box;
-        }
-
-        .button-row {
-            margin-top: auto;
-            display: flex;
-            justify-content: center;
-            padding-top: 20px;
-        }
-
-        .submit_button {
-            background-color: #4a76c6;
-            color: white;
-            border: none;
-            padding: 10px 40px;
-            font-size: 1rem;
-            cursor: pointer;
-            border-radius: 5px;
-        }
-
-        @media (max-width: 900px) {
-            .flex-container {
-                flex-direction: column;
-                align-items: center;
-                gap: 40px;
-            }
-        }
-    </style>
+    <link rel="stylesheet" href="{{ url_for('static', filename='index.css') }}">
+    <link rel="icon" href="{{ url_for('static', filename='AESLogo.png') }}">
 </head>
 <body>
-    <div class="App">
-        <header class="App-header">
-          <img src="../static/logo512.png" class="App-logo" alt="logo"/>
-          <h1>OPTIMIZED ADVANCED ENCRYPTION STANDARD <br/> VISUALIZER</h1>
+    <div class="aes-page">
+       
+        <aside class="aes-sidebar">
+            <div class="aes-logo">
+                <div class="aes-logo-icon">
+                    <img src="{{ url_for('static', filename='logo512.png') }}" alt="AES Logo">
+                </div>
+                <div class="aes-logo-text">
+                    <div class="aes-logo-title">Optimized AES Visualizer</div>
+                    <div class="aes-logo-subtitle">Encrypt · Decrypt · Visualize</div>
+                </div>
+            </div>
 
-          <div class="flex-container">
+            <div class="aes-sidebar-section">
+                <h3>How it works</h3>
+                <ol>
+                    <li>Enter plaintext or ciphertext.</li>
+                    <li>Choose the desired key size.</li>
+                    <li>Provide your key.</li>
+                    <li>Run Encrypt or Decrypt.</li>
+                    <li>Inspect detailed round-by-round steps.</li>
+                </ol>
+            </div>
 
-            <form class="form-column" action="/encrypt" method="POST">
-                <div class="form-row">
-                    <label for="enc_plaintext">Enter the Plain Text:</label>
-                    <input type="text" name="plaintext" id="enc_plaintext">
+            <div class="aes-sidebar-section">
+                <h3>Key features</h3>
+                <ul class="aes-meta-list">
+                    <li><span>Block size</span><strong>128-bit</strong></li>
+                    <li><span>Key hashing</span><strong>SHA-512</strong></li>
+                    <li><span>Visualization</span><strong>Per round / block</strong></li>
+                </ul>
+            </div>
+        </aside>
+
+       
+        <main class="aes-main">
+            <header class="aes-header">
+                <div>
+                    <h1>AES Visual Playground</h1>
+                    <p>Experiment with an optimized AES implementation and see exactly what happens inside each round.</p>
+                </div>
+                <div class="aes-header-badges">
+                    <span class="aes-badge">Educational</span>
+                    <span class="aes-badge">Interactive</span>
+                    <span class="aes-badge">Step-by-step</span>
+                </div>
+            </header>
+
+            <section class="aes-card-grid">
+                
+                <div class="aes-card">
+                    <h2 class="aes-card-title">Encrypt</h2>
+                    <p class="aes-card-desc">
+                        Convert plaintext into ciphertext and visualize every internal AES transformation.
+                    </p>
+
+                    
+                    <form class="aes-form" action="/encrypt" method="POST">
+                        <div class="aes-field-group">
+                            <label for="enc_plaintext">Plaintext</label>
+                            <textarea
+                                id="enc_plaintext"
+                                name="plaintext"
+                                rows="3"
+                                placeholder="Enter the plaintext you want to encrypt..."
+                            ></textarea>
+                        </div>
+
+                        <div class="aes-field-row">
+                            <div class="aes-field-group">
+                                <label for="enc_key_size">Key size</label>
+                                <select id="enc_key_size" name="key_size">
+                                    <option value="128">128-bit</option>
+                                    <option value="192">192-bit</option>
+                                    <option value="256">256-bit</option>
+                                </select>
+                            </div>
+
+                            <div class="aes-field-group">
+                                <label for="enc_key">Key</label>
+                                <input
+                                    type="text"
+                                    id="enc_key"
+                                    name="key"
+                                    placeholder="Enter your key..."
+                                >
+                            </div>
+                        </div>
+
+                        <div class="aes-actions">
+                            <button type="submit" class="aes-btn-primary">
+                                Run Encryption
+                            </button>
+                        </div>
+                    </form>
                 </div>
 
-                <div class="form-row">
-                    <label for="enc_key_size">Select Key Size:</label>
-                    <select name="key_size" id="enc_key_size">
-                        <option value="128">128-Bit</option>
-                        <option value="192">192-Bit</option>
-                        <option value="256">256-Bit</option>
-                    </select>
+                
+                <div class="aes-card">
+                    <h2 class="aes-card-title">Decrypt</h2>
+                    <p class="aes-card-desc">
+                        Recover plaintext from ciphertext and inspect the inverse AES operations.
+                    </p>
+
+                    <form class="aes-form" action="/decrypt" method="POST">
+                        <div class="aes-field-group">
+                            <label for="dec_ciphertext">Ciphertext</label>
+                            <textarea
+                                id="dec_ciphertext"
+                                name="ciphertext"
+                                rows="3"
+                                placeholder="Enter the ciphertext you want to decrypt..."
+                            ></textarea>
+                        </div>
+
+                        <div class="aes-field-row">
+                            <div class="aes-field-group">
+                                <label for="dec_key_size">Key size</label>
+                                <select id="dec_key_size" name="key_size">
+                                    <option value="128">128-bit</option>
+                                    <option value="192">192-bit</option>
+                                    <option value="256">256-bit</option>
+                                </select>
+                            </div>
+
+                            <div class="aes-field-group">
+                                <label for="dec_key">Key</label>
+                                <input
+                                    type="text"
+                                    id="dec_key"
+                                    name="key"
+                                    placeholder="Enter your key..."
+                                >
+                            </div>
+                        </div>
+
+                        <div class="aes-actions">
+                            <button type="submit" class="aes-btn-primary aes-btn-secondary">
+                                Run Decryption
+                            </button>
+                        </div>
+                    </form>
                 </div>
-
-                <div class="form-row">
-                    <label for="enc_key">Enter the Key:</label>
-                    <input type="text" name="key" id="enc_key">
-                </div>
-
-                <div class="button-row">
-                    <input type="Submit" class="submit_button" value="Encrypt">
-                </div>
-            </form>
-
-            <form class="form-column" action="/decrypt" method="POST">
-                <div class="form-row">
-                    <label for="dec_ciphertext">Enter the Cipher Text:</label>
-                    <input type="text" name="ciphertext" id="dec_ciphertext">
-                </div>
-
-                <div class="form-row">
-                    <label for="dec_key_size">Select Key Size:</label>
-                    <select name="key_size" id="dec_key_size">
-                        <option value="128">128-Bit</option>
-                        <option value="192">192-Bit</option>
-                        <option value="256">256-Bit</option>
-                    </select>
-                </div>
-
-                <div class="form-row">
-                    <label for="dec_key">Enter the Key:</label>
-                    <input type="text" name="key" id="dec_key">
-                </div>
-
-                <div class="button-row">
-                    <input type="Submit" class="submit_button" value="Decrypt">
-                </div>
-            </form>
-
-          </div>
-          <br/>
-        </header>
-
-      </div>
-
+            </section>
+        </main>
+    </div>
 </body>
 </html>
